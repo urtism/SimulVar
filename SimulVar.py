@@ -13,10 +13,36 @@ import tools_functions as tool
 def prRed(prt): print("\033[91m {}\033[00m" .format(prt))
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
 
-def makedirs(dirs):
-    for d in dirs:
-        if not os.path.exists(d):
-			os.makedirs(d)
+def Increase_target(bed,incr_len,opts):
+	for line in open(bed,'r'):
+		line=line.rstrip()
+		if line.startswith('chr'):
+			chr=line.split('\t')[0]
+			start=int(line.split('\t')[1])-int(incr_len)
+			stop=int(line.split('\t')[2])+int(incr_len)
+			out.write('\t'.join([chr,str(start),str(stop)]) +'\n')
+		else:
+			try:
+				chr=line.split('\t')[0]
+				start=int(line.split('\t')[1])-int(incr_len)
+				stop=int(line.split('\t')[2])+int(incr_len)
+				out.write('\t'.join([chr,str(start),str(stop)]) +'\n')
+			except:
+				continue
+
+		
+
+
+def calc_gt(maf_ref,maf_alt):
+	gt='0/1'
+	if [maf_ref,maf_alt] == ['.','.']:
+		return gt
+	else:
+		r=rm.randrange(1,10000000)
+		p_omo=float(maf_alt)*10000000
+		if p_omo >= r:
+			gt='1/1'
+	return gt
 
 def vars_from_db(db,num_snv,num_indel,out):
 
@@ -24,43 +50,69 @@ def vars_from_db(db,num_snv,num_indel,out):
 	vcf=open(out,'w')
 	start = [database.index(x) for x in database if x.startswith("#CHROM")][0]
 	varianti=database[start:]
-	i=0
+	j=0
 	simulate=[['chr1','0']]
-	while i < int(num_snv):
+	while j < int(num_snv):
 		rand=r.randrange(len(varianti))
 		var=varianti[rand].rstrip().split('\t')
 		del(varianti[rand])
 		alt=var[4].split(',')[0]
 		chr=var[0]
 		pos=var[1]
+		info=var[7].split(';')
+		maf_ref,maf_alt=['.','.']
 		if len(var[3])==1 and len(alt)==1:
+			for i in info:
+				if i.startswith('CAF='):
+					caf=i.split('=')[1].split('[')[1].split(']')[0].split(',')
+					if '.' in caf:
+						del caf[caf.index('.')]
+					try:
+						maf_ref,maf_alt=caf
+					except:
+						print caf
 			for v in simulate:
 				if chr == v[0] and int(pos) < int(v[1]) + 150 and chr == v[0] and int(pos) > int(v[1]) - 150:
 					#print v,var
 					pass
 				else:
-					i+=1
-					vcf.write('\t'.join(var[:4]+[alt,'.','.','.','.','.'])+'\n')
+					j+=1
+					gt=calc_gt(maf_ref,maf_alt)
+					vcf.write('\t'.join(var[:4]+[alt,'.','.','.','GT',gt])+'\n')
 					#print var
 					simulate+=[[chr,pos]]
 					break
 		else:	
 			continue 
 	varianti=database[start:]
-	i=0
-	while i < int(num_indel):
+	j=0
+	while j < int(num_indel):
 		rand=r.randrange(len(varianti))
 		var=varianti[rand].rstrip().split('\t')
 		del(varianti[rand])
+		chr=var[0]
+		pos=var[1]
 		alt=var[4].split(',')[0]
+		info=var[7].split(';')
+		maf_ref,maf_alt=['.','.']
 		if len(var[3])>1 or len(alt)>1:
 			for v in simulate:
+				for i in info:
+					if i.startswith('CAF='):
+						caf=i.split('=')[1].split('[')[1].split(']')[0].split(',')
+						if '.' in caf:
+							del caf[caf.index('.')]
+						try:
+							maf_ref,maf_alt=caf
+						except:
+							print caf
 				if chr == v[0] and int(pos) < int(v[1]) + 150 and int(pos) > int(v[1]) - 150:
 					#print v,var
 					pass
 				else:
-					i+=1
-					vcf.write('\t'.join(var[:4]+[alt,'.','.','.','.','.'])+'\n')
+					j+=1
+					gt=calc_gt(maf_ref,maf_alt)
+					vcf.write('\t'.join(var[:4]+[alt,'.','.','.','GT',gt])+'\n')
 					#print var
 					simulate+=[[chr,pos]]
 					break
@@ -201,9 +253,24 @@ def Vcf_to_bamsurgeon(vars,min,max,err):
 			ref=line[3]
 			alt=line[4]
 			format=line[-2]
-			freq=line[-1]
-			if freq == '.' or format != 'vaf':
+			samp_format=line[-1]
+			if min != None and max != None:
 				freq=Freq_calc(min,max,err)
+			else:
+				try:
+					freq=samp_format.split(':')[format.split(':').index('VAF')]
+				except:
+					try:
+						gt=samp_format.split(':')[format.split(':').index('GT')]
+					except:
+						print "ERROR: Set VAF or/and GT in format"
+						exit(1)
+						
+					if gt == '0/1':
+						freq=Freq_calc(0.5,0.51,err)
+					elif gt == '1/1':
+						freq=Freq_calc(1.0,1.1,err)
+
 			if len(ref)==1 and len(alt)==1:
 				if alt =='.':
 					snp.write('\t'.join([chr,pos,pos,freq]) + '\n')
@@ -223,11 +290,11 @@ def Vcf_to_bamsurgeon(vars,min,max,err):
 def Freq_calc(min,max,err):
 	freq=float(rm.randrange(int(float(min)*100),int(float(max)*100)))/100.0
 	if err != None:
-		delta=err*freq
+		delta=float(err)*freq
 		freq_rand=rm.randrange(int((freq-delta)*10000),int((freq+delta)*10000))
 		if freq_rand/10000.0 > 1.0:
-			freq_rand=10000
-		freq=freq_rand	
+			freq_rand=10000.0
+		freq=freq_rand/10000.0
 	return str(freq)
 
 
@@ -252,11 +319,11 @@ if __name__ == '__main__':
 	parser.add_argument('--cosmic', help="cosmic path for variant random extraction",default=None)
 	parser.add_argument('--num_snv_cosmic', help="number of snv to extract from cosmic",default=None)
 	parser.add_argument('--num_indel_cosmic', help="number of indel to extract from cosmic",default=None)
-	parser.add_argument('--min', help="Min threshold of simulating frequence for Germline variants",default='0.5')
-	parser.add_argument('--max', help="Max threshold of simulating frequence for Germline variants",default='0.5')
-	parser.add_argument('--min_som', help="Min threshold of simulating frequence for Somatic variants",default='0.05')
-	parser.add_argument('--max_som', help="Max threshold of simulating frequence for Somatic variants",default='0.25')
-	parser.add_argument('--err', help="Simulating frequence error. Variants will be simulated with freq between freq +- err*freq.",default=None)
+	parser.add_argument('--minfreq', help="Min threshold of simulating frequence for Germline variants",default=None)
+	parser.add_argument('--maxfreq', help="Max threshold of simulating frequence for Germline variants",default=None)
+	parser.add_argument('--minfreq_som', help="Min threshold of simulating frequence for Somatic variants",default='0.05')
+	parser.add_argument('--maxfreq_som', help="Max threshold of simulating frequence for Somatic variants",default='0.25')
+	parser.add_argument('--err', help="Simulating frequence error. Variants will be simulated with freq between freq +- err*freq. [float]",default=None)
 	parser.add_argument('-a', '--analysis',choices=['Somatic','Germline'],help="Somatic or Germline",default='Germline')
 	parser.add_argument('-o', '--out_path',help="output path")
 	parser.add_argument('-c', '--cfg',help="configuration file")
@@ -279,7 +346,7 @@ if __name__ == '__main__':
 	log = open(log_path+'.log','w')
 	print '\nLog file will be generated: '+ log_path+'\n'
 
-	makedirs([fastq_path,bam_path])
+	tool.makedirs([fastq_path,bam_path])
 	
 	## Setting path e arguments for each software #####
 	path_art,art_args = set.Set_art(conf,opts)
@@ -301,17 +368,18 @@ if __name__ == '__main__':
 		
 		if opts.amplicon:
 			print "- Reads simulation using ART"
-			tool.Simulate_fastq_art(path_art,art_args,fasta,log)
+			tool.Simulate_fastq_art(path_art,art_args,path_picard,picard_args,fasta,log)
 		else:
 			print "- Reads simulation using Pirs"
 			tool.Simulate_fastq_pirs(path_pirs,pirs_args,fasta,log)
 		
 		for file in os.listdir(opts.out_path + '/FASTQ'):
 			if '.sam' in file:
-				status = subprocess.call("rm " + fastq_path + '/' + file, shell=True)
-			if '1.fq' in file:
+				continue
+				#status = subprocess.call("rm " + fastq_path + '/' + file, shell=True)
+			if '1.f' in file:
 				fastq1 = fastq_path + '/' + file
-			elif '2.fq' in file:
+			elif '2.f' in file:
 				fastq2 = fastq_path + '/' + file
 
 		# Alignment of generated fastq in bam file, sorting and indexing
@@ -336,7 +404,6 @@ if __name__ == '__main__':
 		tool.Index_bam(path_picard,picard_args,bam,log)
 		print "Sample simulated: " + bam + '\n'
 
-
 	elif opts.bam != None:
 		# if bam file is given
 		bam = opts.bam
@@ -345,11 +412,11 @@ if __name__ == '__main__':
 	if opts.dbsnp != None:
 		vars = vars_from_db(opts.dbsnp,opts.num_snv_dbsnp,opts.num_indel_dbsnp,opts.out_path+'/Germline_dbsnp.vcf')
 	if vars != None:
-		makedirs([log_bs_dir,sim_log_dir])
+		tool.makedirs([log_bs_dir,sim_log_dir])
 		print "\nStarting simulation of Germline variants:"
 		# if a file containing variant to simulate is given
 		#write variant from vcf format to bam surgeon format (bed format)
-		snp,indel=Vcf_to_bamsurgeon(vars,opts.min,opts.max,opts.err)
+		snp,indel=Vcf_to_bamsurgeon(vars,opts.minfreq,opts.maxfreq,opts.err)
 		#if list contains snps
 		if os.stat(snp).st_size != 0:
 			outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.snp.bam'
@@ -359,9 +426,9 @@ if __name__ == '__main__':
 			print_vcf('Germline',log_bs_dir,sim_log_dir,opts.ref)
 			#status = subprocess.call("rm "+bam , shell=True)
 			#status = subprocess.call("rm "+bam + '.bai' , shell=True)
-			bam = SortSam(path_picard,picard_args,outbam,log)
+			bam = tool.SortSam(path_picard,picard_args,outbam,log)
 			status = subprocess.call("rm " + outbam, shell=True)
-			Index_bam(path_picard,picard_args,bam,log)
+			tool.Index_bam(path_picard,picard_args,bam,log)
 		#if list contains indels
 		if os.stat(indel).st_size != 0:
 
@@ -384,13 +451,13 @@ if __name__ == '__main__':
 
 	#if analysis is somatic
 	if opts.analysis == 'Somatic':
-		makedirs([log_bs_dir,sim_log_dir])
+		tool.makedirs([log_bs_dir,sim_log_dir])
 		vars_som = opts.vars_som
 		if opts.cosmic != None:
 			vars_som = vars_from_db(opts.cosmic,opts.num_snv_cosmic,opts.num_indel_cosmic,opts.out_path+'/Somatic_cosmic.vcf')
 		print "Starting simulation of Somatic variants:"
 		#write variant from vcf format to bam surgeon format (bed format)
-		snp,indel = Vcf_to_bamsurgeon(vars_som,opts.min_som,opts.max_som,opts.err)
+		snp,indel = Vcf_to_bamsurgeon(vars_som,opts.minfreq_som,opts.maxfreq_som,opts.err)
 		somaticbam = bam.split('.')[0] + '.Somatic.bam'
 		if os.stat(snp).st_size != 0:
 			outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.snp.Somatic.bam'

@@ -170,7 +170,7 @@ def Set_bwa(conf,opts):
 	if conf["bwa"]["output-prefix"]!="":
 		bwa_args+=[opts.out_path+'/BAM/' + conf["bwa"]["output-prefix"]]
 	else:
-		bwa_args+=[opts.out_path+'/BAM/' + opts.sample +'.bam']
+		bwa_args+=[opts.out_path+'/BAM/' + opts.sample]
 
 	path_bwa=conf["bwa"]["path"]
 
@@ -193,7 +193,7 @@ def Set_pirs_args(conf,opts):
 	if conf["pirs"]["insert-len-mean"]!="":
 		pirs_arguments+=["--insert-len-mean="+ conf["pirs"]["insert-len-mean"]]
 	else:
-		pass
+		pirs_arguments+=["--insert-len-mean=300"]
 	if conf["pirs"]["insert-len-sd"]!="":
 		pirs_arguments+=["--insert-len-sd="+conf["pirs"]["insert-len-sd"]]
 	else:
@@ -201,11 +201,15 @@ def Set_pirs_args(conf,opts):
 	if conf["pirs"]["base-calling-profile"]!="":
 		pirs_arguments+=["--base-calling-profile="+conf["pirs"]["base-calling-profile"]]
 	else:
-		pass
+		pirs_arguments+=["--no-subst-errors"]
 	if conf["pirs"]["indel-error-profile"]!="":
 		pirs_arguments+=["--indel-error-profile="+conf["pirs"]["indel-error-profile"]]
 	else:
-		pass
+		pirs_arguments+=["--no-indel-errors"]
+	if conf["pirs"]["gc-bias-profile"]!="":
+		pirs_arguments+=["--gc-bias-profile="+conf["pirs"]["gc-bias-profile"]]
+	else:
+		pirs_arguments+=["--no-gc-content-bias"]
 	if conf["pirs"]["error-rate"]!="":
 		pirs_arguments+=["--error-rate="+conf["pirs"]["error-rate"]]
 	else:
@@ -247,3 +251,7 @@ def Set_picard(conf,opts):
 
 def Set_samtools(conf,opts):
 	return conf["samtools"]["path"]
+
+def Set_bedtools(conf,opts):
+	return conf["bedtools"]["path"]
+
