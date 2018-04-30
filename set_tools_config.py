@@ -16,7 +16,7 @@ def Set_bamsurgeon(conf,opts):
 	else:
 		pass
 	if conf["bamsurgeon"]["numsnvs"]!="":
-		ms_args+=['--numsnvs',+conf["bamsurgeon"]["numsnvs"]]
+		ms_args+=['--numsnvs',conf["bamsurgeon"]["numsnvs"]]
 	else:
 		pass
 	if conf["bamsurgeon"]["coverdiff"]!="":
@@ -55,14 +55,72 @@ def Set_bamsurgeon(conf,opts):
 		ms_args+=['--seed',conf["bamsurgeon"]["seed"]]
 	else:
 		pass
-
-	ms_args+=conf["bamsurgeon"]["flags"].split(',')
+	if conf["bamsurgeon"]["flags"]!="":
+		ms_args+=conf["bamsurgeon"]["flags"].split(',')
+	else:
+		pass
 	path_addsnv=conf["bamsurgeon"]["addsnv"]
 	path_addindel=conf["bamsurgeon"]["addindel"]
 
 	return path_addsnv,path_addindel,ms_args
 
+# def Set_bamsurgeon_sv(conf,opts):
+# 	ms_args=[]
+# 	if conf["bamsurgeon_sv"]["aligner"]!="":
+# 		ms_args+=['--aligner',conf["bamsurgeon_sv"]["aligner"]]
+# 	else:
+# 		ms_args+=['--aligner','mem']
+# 	if conf["bamsurgeon_sv"]["svfrac"]!="":
+# 		ms_args+=['--mutfrac',conf["bamsurgeon_sv"]["svfrac"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["maxlibsize"]!="":
+# 		ms_args+=['--maxlibsize',conf["bamsurgeon_sv"]["maxlibsize"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["kmer"]!="":
+# 		ms_args+=['--kmer',conf["bamsurgeon_sv"]["kmer"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["maxctglen"]!="":
+# 		ms_args+=['--maxctglen',conf["bamsurgeon_sv"]["maxctglen"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["maxmut"]!="":
+# 		ms_args+=['-n',conf["bamsurgeon_sv"]["maxmut"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["procs"]!="":
+# 		ms_args+=['--procs', conf["bamsurgeon_sv"]["procs"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["ismean"]!="":
+# 		ms_args+=['--ismean',conf["bamsurgeon_sv"]["ismean"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["issd"]!="":
+# 		ms_args+=['--issd',conf["bamsurgeon_sv"]["issd"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["delay"]!="":
+# 		ms_args+=['--delay',conf["bamsurgeon_sv"]["delay"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["cnvfile"]!="":
+# 		ms_args+=['--cnvfile',conf["bamsurgeon_sv"]["cnvfile"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["seed"]!="":
+# 		ms_args+=['--seed',conf["bamsurgeon_sv"]["seed"]]
+# 	else:
+# 		pass
+# 	if conf["bamsurgeon_sv"]["flags"]!="":
+# 		ms_args+=conf["bamsurgeon_sv"]["flags"].split(',')
+# 	else:
+# 		pass
+# 	path_addsv=conf["bamsurgeon_sv"]["addsv"]
 
+# 	return path_addsv,ms_args
 
 def Set_art(conf,opts):
 	art_args=[]

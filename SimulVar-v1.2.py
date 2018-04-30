@@ -186,12 +186,12 @@ def check_simul_vars(log_bs_dir,bam,vars,outpath):
 						type=line.split('\t')[4]
 						var=line.split('\t')[:3]
 						log.write('\t'.join(var+[vaf,type,'SIMULATED']) +'\n')
-						print ':'.join(line.split('\t')[:2]),'--> ' + type +' simulated'
+						#print ':'.join(line.split('\t')[:2]),'--> ' + type +' simulated'
 					elif line_to_check.startswith('snv'):
 						vaf=str(round(float(line_to_check.split('\t')[-2]),3))
 						var=line.split('\t')[:3]
 						log.write('\t'.join(var+[vaf,'SIMULATED']) +'\n')
-						print ':'.join(line.split('\t')[:2]),'--> SNV simulated'
+						#print ':'.join(line.split('\t')[:2]),'--> SNV simulated'
 					else:
 						var=line.split('\t')[:3]
 						log.write('\t'.join(var+['.','NOT SIMULATED']) +'\n')
@@ -217,7 +217,7 @@ def print_header(vcf):
 		##INFO=<ID=Germline,Number=0,Type=Flag,Description="Germline mutation in primary">
 		##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 		##FORMAT=<ID=VAF,Number=1,Type=Float,Description="Variant Allele Frequency">
-		#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSPIKEIN""")+'\n')
+		#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t""")+opts.sample+'\n')
 
 def print_vcf(analisi,log_bs_dir,outpath,reference):
 	vcf=open(outpath+'/'+analisi+'.vcf','a+')
@@ -331,188 +331,195 @@ def Vcf_to_bamsurgeon(vars,min,max,err):
 	vcf.close()
 	return snpfile,indelfile
 
-def SV_vcf_to_bamsurgeon(vars):
-	svfile = opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['sv'])
-	sv=open(svfile,'w')
-	vcf=open(vars,'r')
-	alufile='/home/jarvis/NGS_TOOLS/bamsurgeon-master/scripts/ins_seqs/alu.fa'
+# def SV_vcf_to_bamsurgeon(vars):
+# 	svfile = opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['sv'])
+# 	sv = open(svfile,'w')
+# 	vcf = open(vars,'r')
 
-	for line in vcf:
-		line=(line.rstrip()).split('\t')
-		if line[0].startswith('#'):
-			continue
-		else:
-			chr,pos,id,ref,alt,qual,filter,info,format,samp_format=line
-			alt=re.sub('<|>','',alt)
-			print line
-			try:
-				gt=samp_format.split(':')[format.split(':').index('GT')]
-				gt=re.sub('\|','/',gt)
-			except:
-				gt='0/1'
-			if gt == '0/1':
-				af='0.5'
-			elif gt == '1/1':
-				af='1.0'
-			else:
-				continue
-			svtype=''
-			svend=''
-			svlen=''
-			ciend=''
-			cipos=''
-			mstart=''
-			mend=''
-			for i in info.split(';'):
-				if i.startswith('TSD='):
-					tsd=i.split('=')[1]
-				if i.startswith('SVTYPE='):
-					svtype=i.split('=')[1]
-				if i.startswith('END='):
-					svend=i.split('=')[1]
-				if i.startswith('CIEND'):
-					ciend=i.split('=')[1].split(',')
-				if i.startswith('CIPOS'):
-					cipos=i.split('=')[1].split(',')
-				if i.startswith('SVLEN'):
-					svlen=i.split('=')[1]
+# 	seq_path = os.path.dirname(os.path.abspath(__file__))
+
+# 	#alufile='/home/jarvis/NGS_TOOLS/bamsurgeon-master/scripts/ins_seqs/alu.fa'
+# 	alufile = '/'.join([seq_path,'sequences','ALUs.fa'])
+# 	svafile = '/'.join([seq_path,'sequences','SVA.fa'])
+# 	l1file = '/'.join([seq_path,'sequences','LINE1.fa'])
+# 	mtfile = '/'.join([seq_path,'sequences','MT.fa'])
+# 	maxlen=0
+
+# 	for line in vcf:
+# 		line=(line.rstrip()).split('\t')
+# 		if line[0].startswith('#'):
+# 			continue
+# 		else:
+# 			chr,pos,id,ref,alt,qual,filter,info,format,samp_format=line
+# 			alt=re.sub('<|>','',alt)
+# 			try:
+# 				gt=samp_format.split(':')[format.split(':').index('GT')]
+# 				gt=re.sub('\|','/',gt)
+# 			except:
+# 				gt='0/1'
+# 			if gt == '0/1':
+# 				af='0.5'
+# 			elif gt == '1/1':
+# 				af='1.0'
+# 			else:
+# 				continue
+# 			svtype=''
+# 			svend=''
+# 			svlen=''
+# 			ciend=''
+# 			cipos=''
+# 			mstart=''
+# 			mend=''
+# 			for i in info.split(';'):
+# 				if i.startswith('TSD='):
+# 					tsd=i.split('=')[1]
+# 				if i.startswith('SVTYPE='):
+# 					svtype=i.split('=')[1]
+# 				if i.startswith('END='):
+# 					svend=i.split('=')[1]
+# 				if i.startswith('CIEND'):
+# 					ciend=i.split('=')[1].split(',')
+# 				if i.startswith('CIPOS'):
+# 					cipos=i.split('=')[1].split(',')
+# 				if i.startswith('SVLEN'):
+# 					svlen=i.split('=')[1]
 			
+# 			if ciend != '':
+# 				ciend=rm.randrange(int(ciend[0]),int(ciend[1]))
+# 				svend=str(int(svend)+ciend)
 
-			print svtype,alt
+# 			if cipos != '':
+# 				cipos=rm.randrange(int(cipos[0]),int(cipos[1]))
+# 				pos=str(int(pos)+cipos)
 
-			if 'ALU' in svtype and 'INS' in alt:
-				svend = str(int(pos)+1)
-				for i in info.split(';'):
-					if i.startswith('MEINFO'):
-						aluname,alustart,aluend,polarity=i.split('=')[1].split(',')
+# 			#print svtype,alt
+
+# 			if 'ALU' in svtype and 'INS' in alt:
+# 				alufasta=opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['ALU',chr+':'+pos,'fa'])
+# 				svend = str(int(pos)+1)
+# 				for i in info.split(';'):
+# 					if i.startswith('MEINFO'):
+# 						aluname,alustart,aluend,polarity=i.split('=')[1].split(',')
 				
-				seq=find_seq_in_file(aluname,alustart,aluend,alufile,None)
+# 				seq,maxlen=find_seq_in_file(aluname,alustart,aluend,maxlen,alufile,alufasta,'ALU')
 
-				if tsd != 'null' and seq.startswith(tsd) and seq.endswith(tsd):
-					sv.write('\t'.join([chr,pos,svend,'INS',seq,str(len(tsd))]) + '\n')
-				else:
-					sv.write('\t'.join([chr,pos,svend,'INS',seq]) + '\n')
+# 				if tsd != 'null' and seq.startswith(tsd) and seq.endswith(tsd):
+# 					sv.write('\t'.join([chr,pos,svend,'INS',seq,str(len(tsd))]) + '\n')
+# 				else:
+# 					sv.write('\t'.join([chr,pos,svend,'INS',seq]) + '\n')
 
 
-			elif 'SVA' in svtype and 'INS' in alt:
+# 			elif 'SVA' in svtype and 'INS' in alt:
 
-				svafasta=os.path.isfile(opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['SVA',chr+':'+pos,fa]))
-				svend = str(int(pos)+1)
-				svaname,svastart,svaend=['SVA',0,'all']
-				for i in info.split(';'):
-					if i.startswith('MEINFO'):
-						svaname,svastart,svaend,polarity=i.split('=')[1].split(',')
+# 				svafasta=opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['SVA',chr+':'+pos,'fa'])
+# 				svend = str(int(pos)+1)
+# 				svaname,svastart,svaend=['SVA',0,'all']
+# 				for i in info.split(';'):
+# 					if i.startswith('MEINFO'):
+# 						svaname,svastart,svaend,polarity=i.split('=')[1].split(',')
 				
-				seq=find_seq_in_file(svaname,svastart,svaend,svafile,svafasta)
+# 				seq,maxlen=find_seq_in_file(svaname,svastart,svaend,maxlen,svafile,svafasta,'SVA')
 
-				if tsd != 'null' and seq.startswith(tsd) and seq.endswith(tsd):
-					sv.write('\t'.join([chr,pos,svend,'INS',svafasta,str(len(tsd))]) + '\n')
-				else:
-					sv.write('\t'.join([chr,pos,svend,'INS',svafasta]) + '\n')
+# 				if tsd != 'null' and seq.startswith(tsd) and seq.endswith(tsd):
+# 					sv.write('\t'.join([chr,pos,svend,'INS',svafasta,str(len(tsd)),'1']) + '\n')
+# 				else:
+# 					sv.write('\t'.join([chr,pos,svend,'INS',svafasta,'1']) + '\n')
 
-			elif 'LINE1' in svtype and 'INS' in alt:
+# 			elif 'LINE1' in svtype and 'INS' in alt:
 
-				l1fasta=os.path.isfile(opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['LINE1',chr+':'+pos,fa]))
-				svend = str(int(pos)+1)
-				l1name,l1start,l1end=['LINE1',0,'all']
-				for i in info.split(';'):
-					if i.startswith('MEINFO'):
-						l1name,l1start,l1end,polarity=i.split('=')[1].split(',')
+# 				l1fasta=opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['LINE1',chr+':'+pos,'fa'])
+# 				svend = str(int(pos)+1)
+# 				l1name,l1start,l1end=['LINE1',0,'all']
+# 				for i in info.split(';'):
+# 					if i.startswith('MEINFO'):
+# 						l1name,l1start,l1end,polarity=i.split('=')[1].split(',')
 				
-				seq=find_seq_in_file(l1name,l1start,l1end,l1file,l1fasta)
+# 				seq,maxlen=find_seq_in_file(l1name,l1start,l1end,maxlen,l1file,l1fasta,'LINE1')
 
-				if tsd != 'null' and seq.startswith(tsd) and seq.endswith(tsd):
-					sv.write('\t'.join([chr,pos,svend,'INS',l1fasta,str(len(tsd))]) + '\n')
-				else:
-					sv.write('\t'.join([chr,pos,svend,'INS',l1fasta]) + '\n')
+# 				if tsd != 'null' and seq.startswith(tsd) and seq.endswith(tsd):
+# 					sv.write('\t'.join([chr,pos,svend,'INS','<'+l1fasta+'>',str(len(tsd))]) + '\n')
+# 				else:
+# 					sv.write('\t'.join([chr,pos,svend,'INS','<'+l1fasta+'>']) + '\n')
 				
 
-			elif 'INS' in svtype and 'MT' in alt:
-				mtfasta=os.path.isfile(opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['MT',chr+':'+pos,fa]))
-				svend = str(int(pos)+1)
-				mtname,l1start,l1end=['MT',0,'all']
-				for i in info.split(';'):
-					if i.startswith('MSTART'):
-						mtstart=i.split('=')[1]
-					if i.startswith('MEND'):
-						mtend=i.split('=')[1]
+# 			elif 'INS' in svtype and 'MT' in alt:
+# 				mtfasta=opts.out_path+ '/FILES/'+'.'.join((vars.split('/')[-1]).split('.')[:-1]+['MT',chr+':'+pos,'fa'])
+# 				svend = str(int(pos)+1)
+# 				mtname,l1start,l1end=['MT',0,'all']
+# 				for i in info.split(';'):
+# 					if i.startswith('MSTART'):
+# 						mtstart=i.split('=')[1]
+# 					if i.startswith('MEND'):
+# 						mtend=i.split('=')[1]
 				
-				seq=find_seq_in_file(mtname,mtstart,mtend,mtfile,mtfasta)
-				sv.write('\t'.join([chr,pos,svend,'INS',mtfasta]) + '\n')
+# 				seq,maxlen =find_seq_in_file(mtname,mtstart,mtend,maxlen,mtfile,mtfasta)
+# 				sv.write('\t'.join([chr,pos,svend,'INS',mtfasta,'1']) + '\n')
 
-			elif 'INS' in svtype and 'MT' in alt:
-
-			if ciend != '':
-				ciend=rm.randrange(int(ciend[0]),int(ciend[1]))
-				svend=str(int(svend)+ciend)
-
-			if cipos != '':
-				cipos=rm.randrange(int(cipos[0]),int(cipos[1]))
-				pos=str(int(pos)+cipos)
-
-			if 'CNV' in svtype:
-				alt=re.sub('<|>','',alt)
-				alt=alt.split(',')[rm.randrange(1,len(alt.split(',')))]
-				if alt == 'INV':
-					svtype='INV'
-				elif alt == 'CN0':
-					svtype='DEL'
-				else:
-					svtype='DUP'
+# 			if 'CNV' in svtype:
+# 				alt=re.sub('<|>','',alt)
+# 				alt=alt.split(',')[rm.randrange(1,len(alt.split(',')))]
+# 				if alt == 'INV':
+# 					svtype='INV'
+# 				elif alt == 'CN0':
+# 					svtype='DEL'
+# 				else:
+# 					svtype='DUP'
 					
-			if 'INV' in svtype:
-				sv.write('\t'.join([chr,pos,svend,'INV']) + '\n')
+# 			if 'INV' in svtype:
+# 				maxlen=max([maxlen,int(svend)-int(pos)])
+# 				sv.write('\t'.join([chr,pos,svend,'INV']) + '\n')
 
-			if 'DEL'in svtype:
-				sv.write('\t'.join([chr,pos,svend,'DEL','1.0',af]) + '\n')
+# 			if 'DEL'in svtype:
+# 				maxlen=max([maxlen,int(svend)-int(pos)])
+# 				sv.write('\t'.join([chr,pos,svend,'DEL','1.0',af]) + '\n')
 			
-			if 'DUP' in svtype:
-				alt=re.sub('<|>','',alt)
-				nalt=str(int(float(af)*2)*(int(re.sub('CN','',alt))-1))
-				print nalt
-				sv.write('\t'.join([chr,pos,svend,'DUP',nalt]) + '\n')
-	sv.close()
-	vcf.close()
-	return svfile
+# 			if 'DUP' in svtype:
+# 				maxlen=max([maxlen,int(svend)-int(pos)])
+# 				alt=re.sub('<|>','',alt)
+# 				nalt=str(int(float(af)*2)*(int(re.sub('CN','',alt))-1))
+# 				sv.write('\t'.join([chr,pos,svend,'DUP',nalt]) + '\n')
 
-def find_seq_in_file(name,start,end,seqfile,svfasta):
-	seqf=open(seqfile,'r')
-	seqline=[]
-	for line in seqf:
-		line=line.rstrip()
-		if line == '>'+name:
-			ok=1
-			continue
-		elif line.startswith('>'):
-			ok=0
-			continue
-		if ok==1:
-			seqline+=[line]
+# 	sv.close()
+# 	vcf.close()
+# 	return svfile,maxlen
 
-	if end == 'all':
-		seq= ''.join(seqline)
-	else:
-		try:
-			seq= ''.join(seqline)[int(start):int(end)]
-		except:
-			seq= ''.join(seqline)[int(start):]
-	if svtype =='ALU':
-		return seq.upper()
-	elif svtype == 'SVA':
-		svfasta = open(svfasta,'w')
-		svfa.write('>SVA\n')
-		svfa.write(seq.upper())
-		svfa.close()
-		return seq.upper()
-	elif svtype == 'LINE1':
-		svfasta = open(svfasta,'w')
-		svfa.write('>LINE1\n')
-		svfa.write(seq.upper())
-		svfa.close()
-		return seq.upper()
-		
+# def find_seq_in_file(name,start,end,oldmaxlen,seqfile,svfasta,svtype):
+# 	seqf=open(seqfile,'r')
+# 	seqline=[]
+# 	for line in seqf:
+# 		line=line.rstrip()
+# 		if line == '>'+name:
+	# 		ok=1
+	# 		continue
+	# 	elif line.startswith('>'):
+	# 		ok=0
+	# 		continue
+	# 	if ok==1:
+	# 		seqline+=[line]
+	# maxlen=max([len(seqline),oldmaxlen])
+	# if end == 'all':
+	# 	seq= ''.join(seqline)
+	# else:
+	# 	try:
+	# 		seq= ''.join(seqline)[int(start):int(end)]
+	# 	except:
+	# 		seq= ''.join(seqline)[int(start):]
+	# if svtype =='ALU':
+	# 	svfasta = seq.upper()
+	# elif svtype == 'SVA':
+	# 	svfa = open(svfasta,'w')
+	# 	svfa.write('>SVA\n')
+	# 	svfa.write(seq.upper())
+	# 	svfa.close()
+	# elif svtype == 'LINE1':
+	# 	svfa = open(svfasta,'w')
+	# 	svfa.write('>LINE1\n')
+	# 	svfa.write(seq.upper())
+	# 	svfa.close()
+	# return svfasta,	maxlen
 
-def split_neighbors(v_file,distance,out_path):
+
+def split_neighbors(v_file,maxlen,distance,out_path):
 	vfile=open(v_file,'r')
 	left_variants=vfile.readlines()
 	all_variants=[x for x in left_variants]
@@ -542,7 +549,7 @@ def split_neighbors(v_file,distance,out_path):
 						vstart=v[1]
 						vstop=v[2]
 						if vchr == chr:
-							if int(stop) <= int(vstart)-int(distance) and int(start) <= int(vstart)-int(distance) or int(stop) >= int(vstop)+int(distance) and int(start) >= int(vstop)+int(distance):
+							if int(stop) <= int(vstart)-int(maxlen)-int(distance) and int(start) <= int(vstart)-int(distance)-int(maxlen) or int(stop) >= int(vstop)+int(distance)+int(maxlen) and int(start) >= int(vstop)+int(distance)+int(maxlen):
 								pass
 							else:
 								add=0
@@ -557,15 +564,14 @@ def split_neighbors(v_file,distance,out_path):
 	return splitted_variants
 
 
-
 def Freq_calc(min,max,err):
 	freq=float(rm.randrange(int(float(min)*100),int(float(max)*100)))/100.0
 	if err != None:
 		delta=float(err)*freq
 		freq_rand=rm.randrange(int((freq-delta)*10000),int((freq+delta)*10000))
-		if freq_rand/10000.0 > 1.0:
-			freq_rand=10000.0
 		freq=freq_rand/10000.0
+	if freq > 1.0:
+		freq=1.0
 	return str(freq)
 
 
@@ -590,7 +596,7 @@ if __name__ == '__main__':
 	parser.add_argument('--Germline_simulation',help='''It allows simulation of germline variants starting from: a) paired fastq files, b) bam file. Variants will be taken from a vcf (--vcfvariants) or dbSNP (--dbsnp). 
 						Allele frequency can be set: a) using freq thresholds (--minfreq and --maxfreq), b) using VAF in the FORMAT field in vcf file, c) using GT in the FORMAT field in vcf file.''',action='store_true')
 	parser.add_argument('--vcfvariants', help="Germline variant list to simulate in vcf format", default=None)
-	parser.add_argument('--sv_vcf', help="Germline Structural variation list to simulate in vcf format", default=None)
+	#parser.add_argument('--sv_vcf', help="Germline Structural variation list to simulate in vcf format", default=None)
 	parser.add_argument('--dbsnp', help="dbsnp path for variant random extraction",default=None)
 	parser.add_argument('--num_snv_dbsnp', help="number of snv to extract from db_snp", type=int, default=None)
 	parser.add_argument('--num_indel_dbsnp', help="number of indel to extract from db_snp", type=int, default=None)
@@ -641,6 +647,7 @@ if __name__ == '__main__':
 	path_bwa,bwa_args = set.Set_bwa(conf,opts)
 	path_picard,picard_args = set.Set_picard(conf,opts)
 	addsnv,addindel,bs_args = set.Set_bamsurgeon(conf,opts)
+	#addsv,bs_sv_args = set.Set_bamsurgeon_sv(conf,opts)
 	samtools_path = set.Set_samtools(conf,opts)
 	bedtools_path = set.Set_bedtools(conf,opts)
 	
@@ -713,48 +720,67 @@ if __name__ == '__main__':
 			dbsnp=opts.dbsnp
 			if opts.bed != None:
 				dbsnp=tool.Intersect_DB_bed(opts.bed,opts.dbsnp,bedtools_path,opts,log)
-			vars = vars_from_db(vars,dbsnp,opts.num_snv_dbsnp,opts.num_indel_dbsnp,opts.files_path+'/Spikein.Germline.vcf')
+			vars = vars_from_db(vars,dbsnp,opts.num_snv_dbsnp,opts.num_indel_dbsnp,files_path+'/Spikein.Germline.vcf')
 		
-		if vars == None:
-			print "If you want to simulate germline variants you have to indicate a vcf file or dbSNP path."
-			sv=SV_vcf_to_bamsurgeon(opts.sv_vcf)
-			exit(1)
-
+		# if opts.sv_vcf != None:
+		# 	svars = opts.sv_vcf
+		
 		tool.makedirs([log_bs_dir,sim_log_dir])
 		print "\nStarting Germline spike-in..."
-		# if a file containing variant to simulate is given
-		#write variant from vcf format to bam surgeon format (bed format)
-		snp,indel=Vcf_to_bamsurgeon(vars,opts.minfreq,opts.maxfreq,opts.err)
-		sv=SV_vcf_to_bamsurgeon(opts.sv_vcf)
-		#if list contains snps
-		if os.stat(snp).st_size != 0:
-			for snpfile in split_neighbors(snp,150,files_path):
-				outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.snp.bam'
-				os.chdir(log_bs_dir)
-				tool.Bam_surgeon(addsnv,bs_args,bam,outbam,snpfile,log,opts)
-				bam = tool.SortSam(path_picard,picard_args,outbam,log)
-				status = subprocess.call("rm " + outbam, shell=True)
-				status = subprocess.call("rm "+ snpfile, shell=True)
-				tool.Index_bam(path_picard,picard_args,bam,log)
-			check_simul_vars(log_bs_dir,outbam,snp,sim_log_dir)
-			print_vcf('Germline',log_bs_dir,sim_log_dir,opts.ref)			
-			
-		
-		#if list contains indels
-		if os.stat(indel).st_size != 0:
-			for indelfile in split_neighbors(indel,150,files_path):
-				outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.indel.bam'
-				os.chdir(log_bs_dir)
-				tool.Bam_surgeon(addindel,bs_args,bam,outbam,indelfile,log,opts)
-				status = subprocess.call("rm "+ bam , shell=True)
-				status = subprocess.call("rm "+ bam + '.bai' , shell=True)
-				bam = tool.SortSam(path_picard,picard_args,outbam,log)
-				status = subprocess.call("rm "+ outbam, shell=True)
-				status = subprocess.call("rm "+ indelfile, shell=True)
-				tool.Index_bam(path_picard,picard_args,bam,log)
-			check_simul_vars(log_bs_dir,outbam,indel,sim_log_dir)
-			print_vcf('Germline',log_bs_dir,sim_log_dir,opts.ref)
 
+		if vars != None:
+			snp,indel=Vcf_to_bamsurgeon(vars,opts.minfreq,opts.maxfreq,opts.err)
+			status = subprocess.call("cp " + bam + ' ' + bam_path , shell=True)
+			status = subprocess.call("cp " + bam + '.bai' + ' ' + bam_path , shell=True)
+			bam = bam_path + bam.split('/')[-1]
+			if os.stat(snp).st_size != 0:
+				for snpfile in split_neighbors(snp,0,150,files_path):
+					outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.snp.bam'
+					os.chdir(log_bs_dir)
+					tool.Bam_surgeon(addsnv,bs_args,bam,outbam,snpfile,log,opts)
+					bam = tool.SortSam(path_picard,picard_args,outbam,log)
+					tool.Index_bam(path_picard,picard_args,bam,log)
+					status = subprocess.call("rm " + outbam, shell=True)
+					status = subprocess.call("rm "+ snpfile, shell=True)
+				check_simul_vars(log_bs_dir,outbam,snp,sim_log_dir)
+				print_vcf('Germline',log_bs_dir,sim_log_dir,opts.ref)
+				tool.Index_bam(path_picard,picard_args,bam,log)			
+		
+			#if list contains indels
+			if os.stat(indel).st_size != 0:
+				for indelfile in split_neighbors(indel,0,150,files_path):
+					outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.indel.bam'
+					os.chdir(log_bs_dir)
+					tool.Bam_surgeon(addindel,bs_args,bam,outbam,indelfile,log,opts)
+					status = subprocess.call("rm "+ bam , shell=True)
+					status = subprocess.call("rm "+ bam + '.bai' , shell=True)
+					bam = tool.SortSam(path_picard,picard_args,outbam,log)
+					tool.Index_bam(path_picard,picard_args,bam,log)
+					status = subprocess.call("rm "+ outbam, shell=True)
+					status = subprocess.call("rm "+ indelfile, shell=True)
+				check_simul_vars(log_bs_dir,outbam,indel,sim_log_dir)
+				print_vcf('Germline',log_bs_dir,sim_log_dir,opts.ref)
+				tool.Index_bam(path_picard,picard_args,bam,log)
+
+		# if svars != None:
+		# 	sv,sv_maxlen=SV_vcf_to_bamsurgeon(svars)
+		# 	if os.stat(sv).st_size != 0:
+		# 		for svfile in split_neighbors(sv,sv_maxlen,150,files_path):
+		# 			outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.sv.bam'
+		# 			os.chdir(log_bs_dir)
+		# 			tool.Bam_surgeon(addsv,bs_sv_args,bam,outbam,svfile,log,opts)
+		# 			status = subprocess.call("rm "+ bam , shell=True)
+		# 			status = subprocess.call("rm "+ bam + '.bai' , shell=True)
+		# 			bam = tool.SortSam(path_picard,picard_args,outbam,log)
+		# 			status = subprocess.call("rm "+ outbam, shell=True)
+		# 			status = subprocess.call("rm "+ svfile, shell=True)
+		# 			tool.Index_bam(path_picard,picard_args,bam,log)
+		# 		check_simul_vars(log_bs_dir,outbam,sv,sim_log_dir)
+		# 		print_vcf('Germline',log_bs_dir,sim_log_dir,opts.ref)
+		else:
+			print "If you want to simulate germline variants you have to indicate a vcf file or dbSNP path."
+			exit(1)	
+		
 		germlinebam = bam_path + outbam.split('/')[-1].split('.')[0] + '.Germline.bam'
 		status = subprocess.call("mv " + bam + ' ' + germlinebam , shell=True)
 		status = subprocess.call("mv " + bam + '.bai '+ germlinebam + '.bai', shell=True)
@@ -787,7 +813,7 @@ if __name__ == '__main__':
 		#write variant from vcf format to bam surgeon format (bed format)
 		snp,indel = Vcf_to_bamsurgeon(vars_som,opts.minfreq_som,opts.maxfreq_som,opts.err)
 		if os.stat(snp).st_size != 0:
-			for snpfile in split_neighbors(snp,150,files_path):
+			for snpfile in split_neighbors(snp,0,150,files_path):
 				outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.snp.Somatic.bam'
 				os.chdir(log_bs_dir)
 				tool.Bam_surgeon(addsnv,bs_args,bam,outbam,snpfile,log,opts)
@@ -801,7 +827,7 @@ if __name__ == '__main__':
 
 		
 		if os.stat(indel).st_size != 0:
-			for indelfile in split_neighbors(indel,150,files_path):
+			for indelfile in split_neighbors(indel,0,150,files_path):
 				outbam = bam_path + bam.split('/')[-1].split('.')[0] + '.indel.Somatic.bam'
 				os.chdir(log_bs_dir)
 				tool.Bam_surgeon(addindel,bs_args,bam,outbam,indelfile,log,opts)
@@ -809,7 +835,7 @@ if __name__ == '__main__':
 				status = subprocess.call("rm "+ bam + '.bai' , shell=True)
 				bam = tool.SortSam(path_picard,picard_args,outbam,log)
 				status = subprocess.call("rm " + outbam, shell=True)
-				status = subprocess.call("rm "+ indelfile, shell=True)
+				#status = subprocess.call("rm "+ indelfile, shell=True)
 				tool.Index_bam(path_picard,picard_args,bam,log)
 			check_simul_vars(log_bs_dir,outbam,indel,sim_log_dir)
 			print_vcf('Somatic',log_bs_dir,sim_log_dir,opts.ref)

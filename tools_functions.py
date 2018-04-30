@@ -11,7 +11,6 @@ def makedirs(dirs):
 
 
 def Bam_surgeon(path_bs,opts_bs,inbam,outbam,vars,log,opts):
-	
 	tmpdir='/'.join(outbam.split('/')[:-1]+['tmp'])
 	makedirs([tmpdir])
 	args = ['python',path_bs,'-v',vars,'-f', inbam,'-r', opts.ref,'-o',outbam,'--tmpdir',tmpdir] + opts_bs
@@ -24,6 +23,7 @@ def Bam_surgeon(path_bs,opts_bs,inbam,outbam,vars,log,opts):
 	if success:
 		prRed('Error in Variant spikein. Check log file.')
 		exit(1)
+
 
 
 def Simulate_fastq_pirs(path_pirs,opts_pirs,fasta,log):
@@ -93,14 +93,15 @@ def Alignment_bwa(path_bwa,opts_bwa,fastq1,fastq2,log,opts):
 
 def Index_bam(path_picard,opts_picard,bam,log):
 	bai=bam+'.bai'
-	if not os.path.exists(bai):
-		args = ['java',opts_picard[0],'-jar',path_picard,'BuildBamIndex','I='+bam,'O='+bai,'VALIDATION_STRINGENCY=LENIENT']
-		success = subprocess.call(args,stdout=log,stderr=log)
-		if not success:
-			pass
-		else:
-			prRed('Error in Indexing. Check log file.')
-			exit(1)
+	if os.path.exists(bai):
+		status = subprocess.call("rm "+ bai , shell=True)
+	args = ['java',opts_picard[0],'-jar',path_picard,'BuildBamIndex','I='+bam,'O='+bai,'VALIDATION_STRINGENCY=LENIENT']
+	success = subprocess.call(args,stdout=log,stderr=log)
+	if not success:
+		pass
+	else:
+		prRed('Error in Indexing. Check log file.')
+		exit(1)
 
 
 def SamFormatConverter(path_picard,opts_picard,sam,log):
@@ -125,6 +126,17 @@ def SortSam(path_picard,opts_picard,bam,log):
 		return sort
 	else:
 		prRed('Error in Sorting. Check log file.')
+		exit(1)
+	bai=bam+'.bai'
+	
+	if os.path.exists(bai):
+		status = subprocess.call("rm "+ bai , shell=True)
+	args = ['java',opts_picard[0],'-jar',path_picard,'BuildBamIndex','I='+bam,'O='+bai,'VALIDATION_STRINGENCY=LENIENT']
+	success = subprocess.call(args,stdout=log,stderr=log)
+	if not success:
+		pass
+	else:
+		prRed('Error in Indexing. Check log file.')
 		exit(1)
 
 
